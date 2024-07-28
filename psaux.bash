@@ -232,8 +232,14 @@ almost_ps_aux() {
         (( stat_fields[8]  == pid )) && state+=+
 
         ttyname "${stat_fields[7]}"; tty=$REPLY
-        cpu=$((stat_fields[14] / sys_clk_tck))  # fixme: apparently completely wrong????
         start=$((boottime-(stat_fields[22] / sys_clk_tck)))
+        cpu=$(((stat_fields[14]+stat_fields[15]+stat_fields[16]+stat_fields[17]) * 1000 / sys_clk_tck))
+        if (( start )); then
+            cpu=$((cpu/start)) cpu=$((${cpu::-1})).${cpu: -1}
+        else
+            cpu=0.0
+        fi
+
         # if this was at least yesterday
         if (( start >= time_of_day )); then
             printf -v start '%(%b%d)T' "$((EPOCHSECONDS-start))"
