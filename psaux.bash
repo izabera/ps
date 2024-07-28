@@ -209,7 +209,7 @@ almost_ps_aux() {
         while read -ru "$status" -a status_fields; do
             case ${status_fields[0]} in
                 VmLck:) vmlocked=${status_fields[1]} ;;
-                Uid:) uid=${status_fields[1]} ;; # this seems to be the only reliable way to get the uid from bash using builtins only
+                Uid:) uid=${status_fields[2]} ;; # this seems to be the only reliable way to get the uid from bash using builtins only
             esac
         done
         (( ! ${#cmd_line[@]} )) && cmd_line[0]=[$name]
