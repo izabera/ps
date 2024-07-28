@@ -137,8 +137,8 @@ get_term_size() {
 printall() {
     get_term_size
 
-    printf -v fmt "%%-%ds " "${widths[@]::${#widths[@]}-1}"
-    fmt+="%-.${widths[-1]}s"
+    #              USER   PID   %CPU  %MEM  VSZ   RSS   TTY    STAT   START TIME  COMMAND
+    printf -v fmt '%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds %%-%ds %%%ss %%%ss %%-.%ds' "${widths[@]}"
 
     local i line
     for i in "${process_pid[@]}"; do
