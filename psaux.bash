@@ -178,7 +178,7 @@ almost_ps_aux() {
     [[ $EPOCHSECONDS ]] || printf -v EPOCHSECONDS '%(%s)T'
     # however i've not yet checked any of this in any other bash so this might not be very useful after all
 
-    printf -v time_of_day '%(%H*3600+%M*60+%S)T' # omg haxxx
+    printf -v time_of_day '%(10#%H*3600+10#%M*60+10#%S)T' # omg haxxx
     time_of_day=$(($time_of_day))
 
     for dir in /proc/[1-9]*; do
