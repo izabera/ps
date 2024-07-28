@@ -98,7 +98,6 @@ ttyname() {
     done
 }
 
-cnt=0
 process_uid=()
 process_pid=()
 process_cpu=()
@@ -112,18 +111,17 @@ process_time=()
 process_command=()
 widths=()
 add_process() {
-    process_uid[cnt]=$1
-    process_pid[cnt]=$2
-    process_cpu[cnt]=$3
-    process_mem[cnt]=$4
-    process_vsz[cnt]=$5
-    process_rss[cnt]=$6
-    process_tty[cnt]=$7
-    process_stat[cnt]=$8
-    process_start[cnt]=$9
-    process_time[cnt]=${10}
-    process_command[cnt]=${11}
-    ((cnt++))
+    process_uid[$2]=$1
+    process_pid[$2]=$2
+    process_cpu[$2]=$3
+    process_mem[$2]=$4
+    process_vsz[$2]=$5
+    process_rss[$2]=$6
+    process_tty[$2]=$7
+    process_stat[$2]=$8
+    process_start[$2]=$9
+    process_time[$2]=${10}
+    process_command[$2]=${11}
 
     local i width
     for (( i = 1; i <= $#; i++)) do
@@ -137,8 +135,8 @@ add_process() {
 printall() {
     printf -v fmt "%%-%ds " "${widths[@]}"
 
-    local line maxwidth=$((COLUMNS-1))
-    for (( i = 0; i < cnt; i++)) do
+    local i line maxwidth=$((COLUMNS-1))
+    for i in "${process_pid[@]}"; do
         printf -v line "$fmt" \
         "${process_uid[i]}" \
         "${process_pid[i]}" \
