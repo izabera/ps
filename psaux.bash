@@ -100,10 +100,8 @@ add_process() {
     done
 }
 
-# turns out that the most difficult problem in computer science is aligning things
-# this one function looks simple but it took so fucking long
-printall() {
-    local oldrow oldcol LINES COLUMNS
+get_term_size() {
+    local oldrow oldcol
     # in interactive mode bash enables checkwinsize which reports $LINES and $COLUMNS and reacts nicely to sigwinch
     # unfortunately checkwinsize is fucking unusable and broken in 30 different ways in non interactive scripts
     #
@@ -132,7 +130,12 @@ printall() {
     else
         COLUMNS=20000 # whatever
     fi
+}
 
+# turns out that the most difficult problem in computer science is aligning things
+# this one function looks simple but it took so fucking long
+printall() {
+    get_term_size
 
     printf -v fmt "%%-%ds " "${widths[@]}"
 
