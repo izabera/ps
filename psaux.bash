@@ -205,7 +205,8 @@ almost_ps_aux() {
         read -ru "$status" _ name
         while read -ru "$status" -a status_fields; do
             case ${status_fields[0]} in
-                VmLck:) vmlocked=${status_fields[1]}
+                VmLck:) vmlocked=${status_fields[1]} ;;
+                Uid:) uid=${status_fields[1]} ;; # this seems to be the only reliable way to get the uid from bash using builtins only
             esac
         done
         (( ! ${#cmd_line[@]} )) && cmd_line[0]=[$name]
@@ -235,12 +236,10 @@ almost_ps_aux() {
         rss=$((stat_fields[24] * 4096 / 1024)) # hugepages unsupported for now
         time=$(((stat_fields[14]+stat_fields[15]+stat_fields[16]+stat_fields[17]) / sys_clk_tck)) # idfk if this is correct
         printf -v time '%d:%02d' "$((time/60))" "$((time%60))" # ps aux seems to always use this exact format i think???
-        # this seems to be the only reliable way to get the uid from bash using builtins only
-        uid=(${REPLY##*Uid:})
 
         # mem% currently calculated as rss/memtotal.   proably wrong
-        #add_process "user=${users[uid[1]]-?}" "pid=$pid" "cpu=$cpu" "mem=$((rss/memtotal))" "vsz=$vsz" "rss=$rss" "tty=$tty" "state=$state" "start=$start" "time=$time" "cmdline=<${cmd_line[*]}>"
-         add_process      "${users[uid[1]]-?}"     "$pid"     "$cpu"     "$((rss/memtotal))"     "$vsz"     "$rss"     "$tty"       "$state"       "$start"      "$time"          "${cmd_line[*]}"
+        #add_process "user=${users[uid]-?}" "pid=$pid" "cpu=$cpu" "mem=$((rss/memtotal))" "vsz=$vsz" "rss=$rss" "tty=$tty" "state=$state" "start=$start" "time=$time" "cmdline=<${cmd_line[*]}>"
+         add_process      "${users[uid]-?}"     "$pid"     "$cpu"     "$((rss/memtotal))"     "$vsz"     "$rss"     "$tty"       "$state"       "$start"      "$time"          "${cmd_line[*]}"
     done
 
     [[ $cmdline ]] && exec {cmdline}>&-
