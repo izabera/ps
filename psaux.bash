@@ -225,11 +225,11 @@ almost_ps_aux() {
 
         state=${stat_fields[3]}
         (( vmlocked )) && state+=L
-        (( stat_fields[19] >  0   )) && state+=N
-        (( stat_fields[19] <  0   )) && state+='<'
-        (( stat_fields[6]  == pid )) && state+=s
-        (( stat_fields[20] != 1   )) && state+=l
-        (( stat_fields[8]  == pid )) && state+=+
+        (( stat_fields[19] >  0              )) && state+=N
+        (( stat_fields[19] <  0              )) && state+='<'
+        (( stat_fields[6]  == pid            )) && state+=s
+        (( stat_fields[20] != 1              )) && state+=l
+        (( stat_fields[8]  == stat_fields[5] )) && state+=+
 
         ttyname "${stat_fields[7]}"; tty=$REPLY
         start=$((boottime-(stat_fields[22] / sys_clk_tck)))
