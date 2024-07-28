@@ -168,7 +168,7 @@ almost_ps_aux() {
 
     local REPLY
     local cmdline stat status # various fds
-    local dir pid cmd_line stat_fields status_fields name user state tty cpu start vsz rss time # variables
+    local dir pid cmd_line stat_fields status_fields name user state tty cpu start vsz rss time time_of_day # variables
 
     local sys_clk_tck=100 # hardcoded from my unistd.h
 
@@ -177,6 +177,9 @@ almost_ps_aux() {
     # bash<5 doesn't have epochseconds, so try to get it (which doesn't work on macos because strftime doesn't support %s)
     [[ $EPOCHSECONDS ]] || printf -v EPOCHSECONDS '%(%s)T'
     # however i've not yet checked any of this in any other bash so this might not be very useful after all
+
+    printf -v time_of_day '%(%H*3600+%M*60+%S)T' # omg haxxx
+    time_of_day=$(($time_of_day))
 
     for dir in /proc/[1-9]*; do
         pid=${dir#/proc/}
@@ -230,8 +233,13 @@ almost_ps_aux() {
 
         ttyname "${stat_fields[7]}"; tty=$REPLY
         cpu=$((stat_fields[14] / sys_clk_tck))  # fixme: apparently completely wrong????
-        start=$((EPOCHSECONDS-boottime+(stat_fields[22] / sys_clk_tck)))
-        printf -v start '%(%M:%S)T' "$start"
+        start=$((boottime-(stat_fields[22] / sys_clk_tck)))
+        # if this was at least yesterday
+        if (( start >= time_of_day )); then
+            printf -v start '%(%b%d)T' "$((EPOCHSECONDS-start))"
+        else
+            printf -v start '%(%H:%M)T' "$((EPOCHSECONDS-start))"
+        fi
         vsz=$((stat_fields[23]/1024))
         rss=$((stat_fields[24] * 4096 / 1024)) # hugepages unsupported for now
         time=$(((stat_fields[14]+stat_fields[15]+stat_fields[16]+stat_fields[17]) / sys_clk_tck)) # idfk if this is correct
