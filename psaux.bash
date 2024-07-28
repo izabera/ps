@@ -167,7 +167,7 @@ almost_ps_aux() {
 
     local REPLY
     local cmdline stat status # various fds
-    local dir pid cmd_line stat_fields user state tty cpu start vsz rss time # variables
+    local dir pid cmd_line stat_fields status_fields name user state tty cpu start vsz rss time # variables
 
     local sys_clk_tck=100 # hardcoded from my unistd.h
 
@@ -195,6 +195,19 @@ almost_ps_aux() {
         while read -rd '' -u "$cmdline"; do
             cmd_line+=("$REPLY")
         done
+        # if cmd_line is empty, this might be a kernel thread
+        # this is not always the case because you can just wipe your own cmdline, and idfk how to detect if something was _actually_ a k thread
+        # htop literally does the same thing as this
+        # ps places square brackets around these process names for whatever reason
+
+        # linux escapes newlines in the file name here, so it's guaranteed to all fit on a single line
+        read -ru "$status" _ name
+        while read -ru "$status" -a status_fields; do
+            case ${status_fields[0]} in
+                VmLck:) vmlocked=${status_fields[1]}
+            esac
+        done
+        (( ! ${#cmd_line[@]} )) && cmd_line[0]=[$name]
 
         read -rd '' -u "$stat"
 
@@ -206,12 +219,12 @@ almost_ps_aux() {
         stat_fields=(. "$pid" . ${REPLY##*) })
 
         state=${stat_fields[3]}
-        (( stat_fields[19] >  0   )) && state+=N  # for whatever reason, in ps aux N is printed first and < is printed last????
+        (( stat_fields[19] >  0   )) && state+=N  # for whatever reason, in ps aux N is printed first and < is printed last (i think????)
         (( stat_fields[6]  == pid )) && state+=s
         (( stat_fields[20] != 1   )) && state+=l
         (( stat_fields[8]  == pid )) && state+=+
         (( stat_fields[19] <  0   )) && state+='<'
-        # L unsupported because idfk how to check for locked pages
+        (( vmlocked )) && state+=L
 
         ttyname "${stat_fields[7]}"; tty=$REPLY
         cpu=$((stat_fields[14] / sys_clk_tck))  # fixme: apparently completely wrong????
@@ -221,14 +234,6 @@ almost_ps_aux() {
         rss=$((stat_fields[24] * 4096 / 1024)) # hugepages unsupported for now
         time=$(((stat_fields[14]+stat_fields[15]+stat_fields[16]+stat_fields[17]) / sys_clk_tck)) # idfk if this is correct
         printf -v time '%d:%02d' "$((time/60))" "$((time%60))" # ps aux seems to always use this exact format i think???
-
-        read -rd '' -u "$status"
-        # if cmd_line is empty, this might be a kernel thread
-        # this is not always the case because you can just wipe your own cmdline, and idfk how to detect if something was _actually_ a k thread
-        # htop literally does the same thing as this
-        # ps places square brackets around these process names for whatever reason
-        (( ! ${#cmd_line[@]} )) && cmd_line[0]=${REPLY%%$'\n'*} cmd_line[0]=[${cmd_line[0]#$'Name:\t'}]
-
         # this seems to be the only reliable way to get the uid from bash using builtins only
         uid=(${REPLY##*Uid:})
 
