@@ -174,8 +174,8 @@ almost_ps_aux() {
 
     add_process USER PID %CPU %MEM VSZ RSS TTY STAT START TIME COMMAND
 
-    # bash<5 doesn't have epochseconds, so try to get it (which doesn't work on macos because strftime doesn't support %s)
-    [[ $EPOCHSECONDS ]] || printf -v EPOCHSECONDS '%(%s)T'
+    # bash<5 doesn't have epochseconds, so try to get it
+    [[ $EPOCHSECONDS ]] || printf -v EPOCHSECONDS '%(%s)T' -1
     # however i've not yet checked any of this in any other bash so this might not be very useful after all
 
     printf -v time_of_day '%(10#%H*3600+10#%M*60+10#%S)T' # omg haxxx
