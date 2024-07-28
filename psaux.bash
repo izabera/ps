@@ -137,9 +137,10 @@ get_term_size() {
 printall() {
     get_term_size
 
-    printf -v fmt "%%-%ds " "${widths[@]}"
+    printf -v fmt "%%-%ds " "${widths[@]::${#widths[@]}-1}"
+    fmt+="%-.${widths[-1]}s"
 
-    local i line maxwidth=$((COLUMNS-1))
+    local i line
     for i in "${process_pid[@]}"; do
         printf -v line "$fmt" \
         "${process_uid[i]}" \
@@ -153,7 +154,7 @@ printall() {
         "${process_start[i]}" \
         "${process_time[i]}" \
         "${process_command[i]}"
-        printf "%.${maxwidth}s\n" "$line"
+        printf "%.${COLUMNS}s\n" "$line"
     done
 
 }
