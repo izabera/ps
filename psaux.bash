@@ -26,7 +26,11 @@ users=()
 read_passwd() {
     local IFS=: fields
     while read -ra fields; do
-        users[fields[2]]=${fields[0]}
+        if (( ${#fields[0]} > 8 )); then
+            users[fields[2]]=${fields[0]::7}+
+        else
+            users[fields[2]]=${fields[0]}
+        fi
     done < /etc/passwd
 }
 
@@ -96,7 +100,7 @@ add_process() {
     local i width
     for (( i = 1; i <= $#; i++)) do
         width=${@:i:1} width=${#width}
-        (( widths[i-1] = width+1 > widths[i-1] ? width+1 : widths[i-1] ))
+        (( widths[i-1] = width > widths[i-1] ? width : widths[i-1] ))
     done
 }
 
@@ -137,8 +141,8 @@ get_term_size() {
 printall() {
     get_term_size
 
-    #              USER   PID   %CPU  %MEM  VSZ   RSS   TTY    STAT   START TIME  COMMAND
-    printf -v fmt '%%-%ds %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds %%-%ds %%%ss %%%ss %%-.%ds' "${widths[@]}"
+    #              USER     PID   %CPU  %MEM  VSZ   RSS   TTY    STAT   START TIME  COMMAND
+    printf -v fmt '%%-%ds   %%%ds %%%ds %%%ds %%%ds %%%ds %%-%ds %%-%ds %%%ss %%%ss %%-.%ds' "${widths[@]}"
 
     local i line
     for i in "${process_pid[@]}"; do
