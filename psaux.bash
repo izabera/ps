@@ -22,36 +22,6 @@
 
 
 
-# in interactive mode bash enables checkwinsize which reports $LINES and $COLUMNS and reacts nicely to sigwinch
-# unfortunately checkwinsize is fucking unusable and broken in 30 different ways in non interactive scripts
-#
-# the normal, reliable way to check the terminal size requires an ioctl we don't have direct access to
-# (altho bash itself does, and it will immediately use it for [[ -t ]], but you can't have it because fuck you)
-#
-# one could in theory start a script with #!/bin/bash -i and use checkwinsize
-# it kinda works but it sucks because it sources all your dotfiles and whatevers
-#
-# so let's manually ask the terminal with the raw ansi codes
-# (which seems to work on my terminal.  if it doesn't work on yours maybe you need a better terminal?)
-# (tested on terminator 2.1.3, which surely is the most common terminal in the world and the only one people care about)
-if [[ -t 1 ]]; then
-    # get the current position
-    IFS='[;' read -sdR -p $'\e[6n' _ oldrow oldcol
-
-    # hide cursor and move it to the end of the screen
-    printf '\e[%s' '?25l' '9999;9999H' # your terminal is smaller than 9999x9999
-
-    # finally get a reasonable estimate
-    IFS='[;' read -sdR -p $'\e[6n' _ LINES COLUMNS
-
-    # show cursor again and go back to the old position
-    printf '\e[%s' '?25h' "$oldrow;1H"
-    # (if we were not at col 1, we just ignore it because we use \n anyway)
-else
-    COLUMNS=200 # whatever
-fi
-
-
 users=()
 read_passwd() {
     local IFS=: fields
@@ -133,6 +103,37 @@ add_process() {
 # turns out that the most difficult problem in computer science is aligning things
 # this one function looks simple but it took so fucking long
 printall() {
+    local oldrow oldcol LINES COLUMNS
+    # in interactive mode bash enables checkwinsize which reports $LINES and $COLUMNS and reacts nicely to sigwinch
+    # unfortunately checkwinsize is fucking unusable and broken in 30 different ways in non interactive scripts
+    #
+    # the normal, reliable way to check the terminal size requires an ioctl we don't have direct access to
+    # (altho bash itself does, and it will immediately use it for [[ -t ]], but you can't have it because fuck you)
+    #
+    # one could in theory start a script with #!/bin/bash -i and use checkwinsize
+    # it kinda works but it sucks because it sources all your dotfiles and whatevers
+    #
+    # so let's manually ask the terminal with the raw ansi codes
+    # (which seems to work on my terminal.  if it doesn't work on yours maybe you need a better terminal?)
+    # (tested on terminator 2.1.3, which surely is the most common terminal in the world and the only one people care about)
+    if [[ -t 1 ]]; then
+        # get the current position
+        IFS='[;' read -sdR -p $'\e[6n' _ oldrow oldcol
+
+        # hide cursor and move it to the end of the screen
+        printf '\e[%s' '?25l' '9999;9999H' # your terminal is smaller than 9999x9999
+
+        # finally get a reasonable estimate
+        IFS='[;' read -sdR -p $'\e[6n' _ LINES COLUMNS
+
+        # show cursor again and go back to the old position
+        printf '\e[%s' '?25h' "$oldrow;1H"
+        # (if we were not at col 1, we just ignore it because we use \n anyway)
+    else
+        COLUMNS=200 # whatever
+    fi
+
+
     printf -v fmt "%%-%ds " "${widths[@]}"
 
     local i line maxwidth=$((COLUMNS-1))
