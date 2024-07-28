@@ -130,7 +130,7 @@ printall() {
         printf '\e[%s' '?25h' "$oldrow;1H"
         # (if we were not at col 1, we just ignore it because we use \n anyway)
     else
-        COLUMNS=200 # whatever
+        COLUMNS=20000 # whatever
     fi
 
 
@@ -159,6 +159,8 @@ almost_ps_aux() {
     read_passwd
     resolve_devices
     read _ memtotal _ < /proc/meminfo
+    read boottime _ < /proc/uptime
+    boottime=${boottime%%[!0-9]*}
 
     local REPLY
     local cmdline stat status # various fds
@@ -167,6 +169,10 @@ almost_ps_aux() {
     local sys_clk_tck=100 # hardcoded from my unistd.h
 
     add_process USER PID %CPU %MEM VSZ RSS TTY STAT START TIME COMMAND
+
+    # bash<5 doesn't have epochseconds, so try to get it (which doesn't work on macos because strftime doesn't support %s)
+    [[ $EPOCHSECONDS ]] || printf -v EPOCHSECONDS '%(%s)T'
+    # however i've not yet checked any of this in any other bash so this might not be very useful after all
 
     for dir in /proc/[1-9]*; do
         pid=${dir#/proc/}
@@ -197,17 +203,27 @@ almost_ps_aux() {
         stat_fields=(. "$pid" . ${REPLY##*) })
 
         state=${stat_fields[3]}
+        (( stat_fields[19] >  0   )) && state+=N  # for whatever reason, in ps aux N is printed first and < is printed last????
+        (( stat_fields[6]  == pid )) && state+=s
+        (( stat_fields[20] != 1   )) && state+=l
+        (( stat_fields[8]  == pid )) && state+=+
+        (( stat_fields[19] <  0   )) && state+='<'
+        # L unsupported because idfk how to check for locked pages
+
         ttyname "${stat_fields[7]}"; tty=$REPLY
         cpu=$((stat_fields[14] / sys_clk_tck))  # fixme: apparently completely wrong????
-        start=$((stat_fields[22] / sys_clk_tck))
+        start=$((EPOCHSECONDS-boottime+(stat_fields[22] / sys_clk_tck)))
+        printf -v start '%(%M:%S)T' "$start"
         vsz=$((stat_fields[23]/1024))
         rss=$((stat_fields[24] * 4096 / 1024)) # hugepages unsupported for now
         time=$(((stat_fields[14]+stat_fields[15]+stat_fields[16]+stat_fields[17]) / sys_clk_tck)) # idfk if this is correct
+        printf -v time '%d:%02d' "$((time/60))" "$((time%60))" # ps aux seems to always use this exact format i think???
 
         read -rd '' -u "$status"
         # if cmd_line is empty, this might be a kernel thread
-        # this is not always the case because you can just wipe your cmdline, and idfk how to detect this
-        # ps also places square brackets around these for whatever reason
+        # this is not always the case because you can just wipe your own cmdline, and idfk how to detect if something was _actually_ a k thread
+        # htop literally does the same thing as this
+        # ps places square brackets around these process names for whatever reason
         (( ! ${#cmd_line[@]} )) && cmd_line[0]=${REPLY%%$'\n'*} cmd_line[0]=[${cmd_line[0]#$'Name:\t'}]
 
         # this seems to be the only reliable way to get the uid from bash using builtins only
