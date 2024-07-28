@@ -233,7 +233,7 @@ almost_ps_aux() {
 
         ttyname "${stat_fields[7]}"; tty=$REPLY
         start=$((boottime-(stat_fields[22] / sys_clk_tck)))
-        cpu=$(((stat_fields[14]+stat_fields[15]+stat_fields[16]+stat_fields[17]) * 1000 / sys_clk_tck))
+        cpu=$(((stat_fields[14]+stat_fields[15]) * 1000 / sys_clk_tck))
         if (( start )); then
             cpu=$((cpu/start)) cpu=$((${cpu::-1})).${cpu: -1}
         else
