@@ -242,12 +242,12 @@ almost_ps_aux() {
         fi
         vsz=$((stat_fields[23]/1024))
         rss=$((stat_fields[24] * 4096 / 1024)) # hugepages unsupported for now
+        mem=$((rss*1000/memtotal)) mem=$((${mem::-1})).${mem: -1}
         time=$(((stat_fields[14]+stat_fields[15]) / sys_clk_tck)) # seems correct, probably slightly wrong tho???
         printf -v time '%d:%02d' "$((time/60))" "$((time%60))" # ps aux seems to always use this exact format i think???
 
-        # mem% currently calculated as rss/memtotal.   proably wrong
-        #add_process "user=${users[uid]-?}" "pid=$pid" "cpu=$cpu" "mem=$((rss/memtotal))" "vsz=$vsz" "rss=$rss" "tty=$tty" "state=$state" "start=$start" "time=$time" "cmdline=<${cmd_line[*]}>"
-         add_process      "${users[uid]-?}"     "$pid"     "$cpu"     "$((rss/memtotal))"     "$vsz"     "$rss"     "$tty"       "$state"       "$start"      "$time"          "${cmd_line[*]}"
+        #add_process "user=${users[uid]-?}" "pid=$pid" "cpu=$cpu" "mem=$mem" "vsz=$vsz" "rss=$rss" "tty=$tty" "state=$state" "start=$start" "time=$time" "cmdline=<${cmd_line[*]}>"
+         add_process      "${users[uid]-?}"     "$pid"     "$cpu"     "$mem"     "$vsz"     "$rss"     "$tty"       "$state"       "$start"      "$time"          "${cmd_line[*]}"
     done
 
     [[ $cmdline ]] && exec {cmdline}>&-
