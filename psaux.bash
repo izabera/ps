@@ -242,7 +242,7 @@ almost_ps_aux() {
         fi
         vsz=$((stat_fields[23]/1024))
         rss=$((stat_fields[24] * 4096 / 1024)) # hugepages unsupported for now
-        time=$(((stat_fields[14]+stat_fields[15]+stat_fields[16]+stat_fields[17]) / sys_clk_tck)) # idfk if this is correct
+        time=$(((stat_fields[14]+stat_fields[15]) / sys_clk_tck)) # seems correct, probably slightly wrong tho???
         printf -v time '%d:%02d' "$((time/60))" "$((time%60))" # ps aux seems to always use this exact format i think???
 
         # mem% currently calculated as rss/memtotal.   proably wrong
