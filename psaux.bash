@@ -17,6 +17,9 @@
 #
 # SO INSTEAD LET'S DO IT AAAAAALL __PROPERLY__ (with zero forking)
 
+# you can test that it doesn't fork with
+# strace -fe fork,clone,clone3 -o strout ./psaux.bash; cat strout
+
 
 
 # in interactive mode bash enables checkwinsize which reports $LINES and $COLUMNS and reacts nicely to sigwinch
