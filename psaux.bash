@@ -224,12 +224,12 @@ almost_ps_aux() {
         stat_fields=(. "$pid" . ${REPLY##*) })
 
         state=${stat_fields[3]}
-        (( stat_fields[19] >  0   )) && state+=N  # for whatever reason, in ps aux N is printed first and < is printed last (i think????)
+        (( vmlocked )) && state+=L
+        (( stat_fields[19] >  0   )) && state+=N
+        (( stat_fields[19] <  0   )) && state+='<'
         (( stat_fields[6]  == pid )) && state+=s
         (( stat_fields[20] != 1   )) && state+=l
         (( stat_fields[8]  == pid )) && state+=+
-        (( stat_fields[19] <  0   )) && state+='<'
-        (( vmlocked )) && state+=L
 
         ttyname "${stat_fields[7]}"; tty=$REPLY
         cpu=$((stat_fields[14] / sys_clk_tck))  # fixme: apparently completely wrong????
